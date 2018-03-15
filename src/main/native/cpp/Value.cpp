@@ -114,6 +114,7 @@ void nt::ConvertToC(const Value& in, NT_Value* out) {
       auto v = in.GetBooleanArray();
       out->data.arr_boolean.arr =
           static_cast<int*>(std::malloc(v.size() * sizeof(int)));
+      if (!out->data.arr_boolean.arr) exit(1);
       out->data.arr_boolean.size = v.size();
       std::copy(v.begin(), v.end(), out->data.arr_boolean.arr);
       break;
@@ -122,6 +123,7 @@ void nt::ConvertToC(const Value& in, NT_Value* out) {
       auto v = in.GetDoubleArray();
       out->data.arr_double.arr =
           static_cast<double*>(std::malloc(v.size() * sizeof(double)));
+      if (!out->data.arr_double.arr) exit(1);
       out->data.arr_double.size = v.size();
       std::copy(v.begin(), v.end(), out->data.arr_double.arr);
       break;
@@ -130,6 +132,7 @@ void nt::ConvertToC(const Value& in, NT_Value* out) {
       auto v = in.GetStringArray();
       out->data.arr_string.arr =
           static_cast<NT_String*>(std::malloc(v.size() * sizeof(NT_String)));
+      if (!out->data.arr_string.arr) exit(1);
       for (size_t i = 0; i < v.size(); ++i)
         ConvertToC(v[i], &out->data.arr_string.arr[i]);
       out->data.arr_string.size = v.size();
@@ -145,6 +148,7 @@ void nt::ConvertToC(const Value& in, NT_Value* out) {
 void nt::ConvertToC(llvm::StringRef in, NT_String* out) {
   out->len = in.size();
   out->str = static_cast<char*>(std::malloc(in.size() + 1));
+  if (!out->str) exit(1);
   std::memcpy(out->str, in.data(), in.size());
   out->str[in.size()] = '\0';
 }

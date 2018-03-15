@@ -21,6 +21,7 @@ using namespace nt;
 
 static void ConvertToC(llvm::StringRef in, char** out) {
   *out = static_cast<char*>(std::malloc(in.size() + 1));
+  if (!*out) exit(1);
   std::memmove(*out, in.data(), in.size());
   (*out)[in.size()] = '\0';
 }
@@ -55,15 +56,17 @@ static void ConvertToC(const RpcDefinition& in, NT_RpcDefinition* out) {
   out->version = in.version;
   ConvertToC(in.name, &out->name);
 
-  out->num_params = in.params.size();
   out->params = static_cast<NT_RpcParamDef*>(
       std::malloc(in.params.size() * sizeof(NT_RpcParamDef)));
+  if (!out->params) exit(1);
+  out->num_params = in.params.size();
   for (size_t i = 0; i < in.params.size(); ++i)
     ConvertToC(in.params[i], &out->params[i]);
 
-  out->num_results = in.results.size();
   out->results = static_cast<NT_RpcResultDef*>(
       std::malloc(in.results.size() * sizeof(NT_RpcResultDef)));
+  if (!out->results) exit(1);
+  out->num_results = in.results.size();
   for (size_t i = 0; i < in.results.size(); ++i)
     ConvertToC(in.results[i], &out->results[i]);
 }
@@ -108,8 +111,10 @@ static void ConvertToC(const std::vector<I>& in, O** out, size_t* out_len) {
     return;
   }
   *out = static_cast<O*>(std::malloc(sizeof(O*) * in.size()));
+  if (!*out) exit(1);
   for (size_t i = 0; i < in.size(); ++i) {
     out[i] = static_cast<O*>(std::malloc(sizeof(O)));
+    if (!out[i]) exit(1);
     ConvertToC(in[i], out[i]);
   }
 }
@@ -193,6 +198,7 @@ NT_Entry* NT_GetEntries(NT_Inst inst, const char* prefix, size_t prefix_len,
   // create array and copy into it
   NT_Entry* info =
       static_cast<NT_Entry*>(std::malloc(info_v.size() * sizeof(NT_Entry)));
+  if (!info) exit(1);
   std::memcpy(info, info_v.data(), info_v.size() * sizeof(NT_Entry));
   return info;
 }
@@ -252,6 +258,7 @@ struct NT_EntryInfo* NT_GetEntryInfo(NT_Inst inst, const char* prefix,
   // create array and copy into it
   NT_EntryInfo* info = static_cast<NT_EntryInfo*>(
       std::malloc(info_v.size() * sizeof(NT_EntryInfo)));
+  if (!info) exit(1);
   for (size_t i = 0; i < info_v.size(); ++i) ConvertToC(info_v[i], &info[i]);
   return info;
 }
@@ -543,8 +550,10 @@ NT_Value** NT_UnpackRpcValues(const char* packed, size_t packed_len,
   // create array and copy into it
   NT_Value** values =
       static_cast<NT_Value**>(std::malloc(values_v.size() * sizeof(NT_Value*)));
+  if (!values) exit(1);
   for (size_t i = 0; i < values_v.size(); ++i) {
     values[i] = static_cast<NT_Value*>(std::malloc(sizeof(NT_Value)));
+    if (!values[i]) exit(1);
     ConvertToC(*values_v[i], values[i]);
   }
   return values;
@@ -629,6 +638,7 @@ struct NT_ConnectionInfo* NT_GetConnections(NT_Inst inst, size_t* count) {
   // create array and copy into it
   NT_ConnectionInfo* conn = static_cast<NT_ConnectionInfo*>(
       std::malloc(conn_v.size() * sizeof(NT_ConnectionInfo)));
+  if (!conn) exit(1);
   for (size_t i = 0; i < conn_v.size(); ++i) ConvertToC(conn_v[i], &conn[i]);
   return conn;
 }
@@ -977,6 +987,7 @@ char* NT_GetValueString(const struct NT_Value* value, uint64_t* last_change,
   *last_change = value->last_change;
   *str_len = value->data.v_string.len;
   char* str = static_cast<char*>(std::malloc(value->data.v_string.len + 1));
+  if (!str) exit(1);
   std::memcpy(str, value->data.v_string.str, value->data.v_string.len + 1);
   return str;
 }
@@ -987,6 +998,7 @@ char* NT_GetValueRaw(const struct NT_Value* value, uint64_t* last_change,
   *last_change = value->last_change;
   *raw_len = value->data.v_string.len;
   char* raw = static_cast<char*>(std::malloc(value->data.v_string.len + 1));
+  if (!raw) exit(1);
   std::memcpy(raw, value->data.v_string.str, value->data.v_string.len + 1);
   return raw;
 }
@@ -998,6 +1010,7 @@ NT_Bool* NT_GetValueBooleanArray(const struct NT_Value* value,
   *arr_size = value->data.arr_boolean.size;
   NT_Bool* arr = static_cast<int*>(
       std::malloc(value->data.arr_boolean.size * sizeof(NT_Bool)));
+  if (!arr) exit(1);
   std::memcpy(arr, value->data.arr_boolean.arr,
               value->data.arr_boolean.size * sizeof(NT_Bool));
   return arr;
@@ -1010,6 +1023,7 @@ double* NT_GetValueDoubleArray(const struct NT_Value* value,
   *arr_size = value->data.arr_double.size;
   double* arr = static_cast<double*>(
       std::malloc(value->data.arr_double.size * sizeof(double)));
+  if (!arr) exit(1);
   std::memcpy(arr, value->data.arr_double.arr,
               value->data.arr_double.size * sizeof(double));
   return arr;
@@ -1022,10 +1036,12 @@ NT_String* NT_GetValueStringArray(const struct NT_Value* value,
   *arr_size = value->data.arr_string.size;
   NT_String* arr = static_cast<NT_String*>(
       std::malloc(value->data.arr_string.size * sizeof(NT_String)));
+  if (!arr) exit(1);
   for (size_t i = 0; i < value->data.arr_string.size; ++i) {
     size_t len = value->data.arr_string.arr[i].len;
     arr[i].len = len;
     arr[i].str = static_cast<char*>(std::malloc(len + 1));
+    if (!arr[i].str) exit(1);
     std::memcpy(arr[i].str, value->data.arr_string.arr[i].str, len + 1);
   }
   return arr;
@@ -1130,6 +1146,7 @@ NT_Bool* NT_GetEntryBooleanArray(NT_Entry entry, uint64_t* last_change,
   *last_change = v->last_change();
   auto vArr = v->GetBooleanArray();
   NT_Bool* arr = static_cast<int*>(std::malloc(vArr.size() * sizeof(NT_Bool)));
+  if (!arr) exit(1);
   *arr_size = vArr.size();
   std::copy(vArr.begin(), vArr.end(), arr);
   return arr;
@@ -1142,6 +1159,7 @@ double* NT_GetEntryDoubleArray(NT_Entry entry, uint64_t* last_change,
   *last_change = v->last_change();
   auto vArr = v->GetDoubleArray();
   double* arr = static_cast<double*>(std::malloc(vArr.size() * sizeof(double)));
+  if (!arr) exit(1);
   *arr_size = vArr.size();
   std::copy(vArr.begin(), vArr.end(), arr);
   return arr;
@@ -1155,6 +1173,7 @@ NT_String* NT_GetEntryStringArray(NT_Entry entry, uint64_t* last_change,
   auto vArr = v->GetStringArray();
   NT_String* arr =
       static_cast<NT_String*>(std::malloc(vArr.size() * sizeof(NT_String)));
+  if (!arr) exit(1);
   for (size_t i = 0; i < vArr.size(); ++i) {
     ConvertToC(vArr[i], &arr[i]);
   }

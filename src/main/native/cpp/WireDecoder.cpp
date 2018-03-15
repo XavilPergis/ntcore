@@ -53,6 +53,7 @@ WireDecoder::WireDecoder(wpi::raw_istream& is, unsigned int proto_rev,
   // realloc.
   m_allocated = 1024;
   m_buf = static_cast<char*>(std::malloc(m_allocated));
+  if (!m_buf) exit(1);
   m_proto_rev = proto_rev;
   m_error = nullptr;
 }
